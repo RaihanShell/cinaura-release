@@ -131,23 +131,52 @@ def download_backdrop(
 def download_all_artwork(
     metadata: Dict[str, Any],
     output_dir: str,
+    base_name: Optional[str] = None,
+    is_dedicated: bool = True,
     dry_run: bool = False,
     force: bool = False,
 ) -> Dict[str, Optional[str]]:
     """
     Download both poster and backdrop for a title.
+    Handles both dedicated folders (poster.jpg, backdrop.jpg)
+    and shared/flat directories (<basename>-poster.jpg, <basename>-backdrop.jpg).
 
     Args:
         metadata: TMDb metadata dict.
         output_dir: Directory to save artwork in.
+        base_name: Basename of the media file (for flat folders).
+        is_dedicated: Whether the folder is dedicated to only this title.
         dry_run: If True, log but don't download.
         force: If True, overwrite existing artwork.
 
     Returns:
         Dict with 'poster' and 'backdrop' keys pointing to file paths (or None).
     """
-    return {
-        "poster": download_poster(metadata, output_dir, dry_run=dry_run, force=force),
-        "backdrop": download_backdrop(metadata, output_dir, dry_run=dry_run, force=force),
-    }
+    results: Dict[str, Optional[str]] = {"poster": None, "backdrop": None}
+
+    if is_dedicated:
+        results["poster"] = download_poster(
+            metadata, output_dir, filename="poster.jpg", dry_run=dry_run, force=force
+        )
+        results["backdrop"] = download_backdrop(
+            metadata, output_dir, filename="backdrop.jpg", dry_run=dry_run, force=force
+        )
+        if base_name:
+            download_poster(
+                metadata, output_dir, filename=f"{base_name}-poster.jpg", dry_run=dry_run, force=force
+            )
+            download_backdrop(
+                metadata, output_dir, filename=f"{base_name}-backdrop.jpg", dry_run=dry_run, force=force
+            )
+    else:
+        p_name = f"{base_name}-poster.jpg" if base_name else "poster.jpg"
+        b_name = f"{base_name}-backdrop.jpg" if base_name else "backdrop.jpg"
+        results["poster"] = download_poster(
+            metadata, output_dir, filename=p_name, dry_run=dry_run, force=force
+        )
+        results["backdrop"] = download_backdrop(
+            metadata, output_dir, filename=b_name, dry_run=dry_run, force=force
+        )
+
+    return results
 

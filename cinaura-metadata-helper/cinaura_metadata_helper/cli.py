@@ -121,7 +121,24 @@ def _process_movie(
 
     # Download artwork
     if not no_artwork:
-        download_all_artwork(metadata, item.directory, dry_run=dry_run, force=force)
+        try:
+            from .utils import is_video_file
+            sibling_videos = [
+                f for f in os.listdir(item.directory)
+                if is_video_file(os.path.join(item.directory, f))
+            ]
+            is_dedicated = len(sibling_videos) <= 1
+        except OSError:
+            is_dedicated = True
+
+        download_all_artwork(
+            metadata,
+            item.directory,
+            base_name=item.basename,
+            is_dedicated=is_dedicated,
+            dry_run=dry_run,
+            force=force,
+        )
 
     return True
 
